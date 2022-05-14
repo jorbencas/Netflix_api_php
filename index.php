@@ -1,10 +1,4 @@
 <?php
-/*
-TODO empezar ha migrar a nodejs
-ya que se hace tedioso el mantenimiento, solamente lo utilizaremos para scripts
-y mas tarde se deberian de migrar estos mismos a python o zx
-*/
-
 require_once __DIR__ . '/classes/api.php';
 $api = new Api();
 $mod = $api->getAm();
@@ -18,12 +12,6 @@ if (isset($mod)) {
         $api->falseHeaders("api_token");
     }
     $headers = $api->getHeaders();
-    // if ($api->isAjax()) {
-    //     error_log($api->getApiToken());
-    //     error_log("/////////////////////");
-    //     error_log($headers['api_token']);
-    // }
-    //error_log("/////////////////////");
     if (isset($headers['api_token']) && substr_compare($api->getApiToken(), $headers['api_token'], 0) == 0) {
         $controller = "api/$mod/{$mod}.php";
         if (file_exists($controller)) {

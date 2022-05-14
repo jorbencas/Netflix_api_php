@@ -508,10 +508,7 @@ class Api extends Config
             (file_exists($path) &&
                 substr_compare($content, file_get_contents($path), 0) !== 0)
         ) {
-            //$this->mkFolders($path); TODO reparar  para que cree la carpeta, no una carpeta con el nombre del fichero
             file_put_contents($path, $content, $flag);
-            //$permissionFile = substr(sprintf('%o', fileperms($path)), -4);
-            //if($permissionFile == $permission) chmod($path,$permission);
             chown($path, get_current_user());
             chmod($path, $permission);
         }

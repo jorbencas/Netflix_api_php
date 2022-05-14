@@ -37,7 +37,6 @@
                     $db_credentials = 'pgsql:host='.$this->servidor.';port='.$this->puerto.';dbname='.$this->base_datos;
                     $options = array(
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        // PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8",
                         PDO::ATTR_PERSISTENT => true,
                         PDO::ATTR_EMULATE_PREPARES => false
                     );
@@ -49,6 +48,14 @@
                 error_log($th->getMessage());
             }
         }
+        
+        public function getLink() {
+            return $this->link;
+        }
+
+        public function getBase_datos(){
+            return $this->base_datos;
+        }
 
         public function ejecutar($sql) {
             $link = $this->getLink();
@@ -58,9 +65,6 @@
                     $dbError=$statement->errorInfo();
                     if (isset($statement->errorCode) && $statement->errorCode!='00000') {
                         error_log($dbError[2] . ". [SQL: " . $statement->queryString . "] [SQLSTATE: " . $dbError[0] . "] [Error Code: " . $dbError[1] . "]");
-                    } else {
-                        // error_log("--------------------------");
-                        // error_log($sql);
                     }
                     return $statement;
                 } else {
@@ -86,12 +90,6 @@
             $statement = $this->ejecutar($sql);
             if (isset($statement)) {
                 return $statement->fetchAll(PDO::FETCH_OBJ);
-                // $array = array();
-                // while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
-                // //while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-                //     array_push($array, $row);
-                // }
-                // return $array;
             } else {
                 return null;
             }
@@ -101,7 +99,6 @@
             $statement = $this->ejecutar($sql);
             if (isset($statement)) {
                 return $statement->fetchObject("stdClass", array()); 
-                //return $statement->fetch(PDO::FETCH_OBJ);
             } else {
                 return $statement;
             }
@@ -119,43 +116,15 @@
         public function transaction($sql) {
             try {
                 $statement = $this->link->prepare($sql/*"UPDATE user SET name = :name"*/);
-        	    /**
-                 * Inicia una transaccion. Una vez iniciada se pueden ejecutar distintas sentencias SQL
-                 * que al finalizar la transaccion se ejecutaran todas como una sola unidad, pudiendo volver 
-                 * atras si hay algun error en alguna transaccion.
-                 * 
-                 * ATENCION: Solo funciona con base de datos que soporten transacciones. 
-                 * Por ejemplo, no funciona con bases de datos MYSAM en MYSQL
-                 * 
-                 */
                 $this->link->beginTransaction();
-
                 $statement->execute();
-                //$statement->execute(["name"=>'Joe']);
-                /**
-                 * Finaliza la transaccion y envia las sentencias SQL para que se ejecuten.
-                 */
                 $this->link->commit();
             } catch (\Exception $e) {
                 if ($this->link->inTransaction()) {
-                    /**
-                     * Si falla una transaccion puede utilizarse este metodo para que vuelva 
-                     * atras todos los cambios que se hayan hecho dentro de la transaccion
-                     * en la base de datos previos a la sentencia que fallo
-                     */
                     $this->link->rollback();
-                    // If we got here our two data updates are not in the database
                 }
                 throw $e;
             }
-        }
-
-        public function getLink() {
-            return $this->link;
-        }
-
-        public function getBase_datos(){
-            return $this->base_datos;
         }
     }
 ?>
