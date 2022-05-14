@@ -1,0 +1,9 @@
+{
+        "api_Profiles_profile_msg": "Se han podido obtener los datos del perfil del usuario",
+        "api_Profiles_profile_error_msg": "No se han podido los datos del perfil usuario",
+        "api_Profiles_profile_user_msg": "Se han podido los datos del perfil del usuario mediante el usuario",
+        "api_Profiles_profile_user_error_msg": "No se han podido obtener los datos del perfil del usuario mediante el usuario",
+        "api_Profiles_update_msg": "Se han podido actualizar los datos del perfil del usuario",
+        "api_Profiles_insert_msg": "Se han podido añadido el perfil de usuario",
+        "api_Profiles_resp_error_msg":"Fallo en la petición del modulo Profiles, REVISALA"
+}

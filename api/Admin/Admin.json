@@ -1,0 +1,6 @@
+{
+        "api_recover_msg":"Se ha podido realizar toda la restauracón de los tatos con exito",
+        "api_recover_error_msg":"No ha sido posible realizar la restaureción de los datos",
+        "api_dobackup_msg":"Se han podido obtener todo",
+        "api_dobackup_error_msg":"No sa ha podido obtener todos los datos, lo sentimos"
+}

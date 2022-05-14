@@ -1,0 +1,1029 @@
+RewriteEngine on
+RewriteRule ^(.*)$ /index.html?path=$1 [NC,L,QSA]
+RewriteEngine On
+RewriteRule ^(.*)$ http://www.nueva.com/$1 [R=301,L]
+
+1.1) Imagina que necesitas enviar a todos tus visitantes a una página en especial, mientras realizas el mantenimiento de tu sitio web:
+Reemplaza el 123.123.123.123 con tu dirección IP y "pagina.html" con el nombre de la página que deseas que tus visitantes vean.
+
+order deny,allow
+deny from all
+allow from 123.123.123.123
+
+ErrorDocument 403 /pagina.html
+
+<Files page.html>
+ allow from all
+</Files>
+
+1.2) El siguiente código redirigirá todo el contenido a un nuevo sitio.
+
+RewriteEngine On
+RewriteRule ^(.*)$ http://www.nueva.com/$1 [R=301,L]
+
+1.3) El siguiente redirecciona a al sitio con www y con SSL.
+
+## Force WWW
+  RewriteCond %{HTTP_HOST} !^www\..+$ [NC]
+  RewriteRule ^(.*)$ https://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+  # o también
+  RewriteRule ^(.*)$ https://www.%{HTTP_HOST}/$1 [R=301,L]
+
+## Force SSL
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+## Si obtenemos error 401 al Forzar el SSL podemos probar con
+  RewriteCond %{HTTPS} !on
+  RewriteCond %{THE_REQUEST} ^(GET|HEAD)\ ([^\ ]+)
+  RewriteRule (.*) https://%{HTTP_HOST}%2 [L,R=301]
+
+## Si queremos excluir la redirección a HTTPS en nuestro entorno local de desarrollo:
+  RewriteCond %{HTTP_HOST} !^nuestro.site.local$
+  RewriteCond %{HTTPS} !on
+  RewriteCond %{THE_REQUEST} ^(GET|HEAD)\ ([^\ ]+)
+  RewriteRule (.*) https://%{HTTP_HOST}%2 [L,R=301]
+
+1.4) El siguiente código redirigirá de la URL de su dominio sin www a la URL de su dominio con www.
+
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^midominio.com
+RewriteRule (.*) http://www.midominio.com/$1 [R=301,L]
+ # o también
+ RewriteRule ^(.*)$ https://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+ # o también
+ RewriteRule ^(.*)$ https://www.%{HTTP_HOST}/$1 [R=301,L]
+
+1.5) El siguiente código redirige al usuario de la dirección URL de su dominio con www a la dirección URL sin www.
+
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^www.midominio.com [NC]
+RewriteRule ^(.*)$ http://midominio.com/$1 [L,R=301]
+
+1.6) Para el uso de alias de dominio, redireccionamos todo de un dominio a otro:
+
+# SOLO LOS ALIAS DE DOMINIO QUE QUEREMOS
+RewriteCond %{HTTP_HOST} ^alias1\.com [OR]
+RewriteCond %{HTTP_HOST} ^www\.alias1\.com [OR]
+RewriteCond %{HTTP_HOST} ^alias2\.com [OR]
+RewriteCond %{HTTP_HOST} ^www\.alias2\.com
+RewriteRule ^(.*)$ https://www.dominio.com%{REQUEST_URI} [R=301,L]
+
+# Cualquier "cosa" que no sea nuestro dominio principal (www.dominio.com)
+RewriteCond %{HTTP_HOST} !^www\.dominio\.com [NC]
+RewriteRule ^(.*)$ https://www.dominio.com%{REQUEST_URI} [R=301,L]
+
+1.7) Para redireccionar una URL con parámetros a una nueva. Típico ejemplo de Urls que nos devuelve Google Webmaster Tools como Urls con errores que se indexan en conocidos frameworks tipo wordpress o joomla por sus parámetros de ids y que no funcionan ya que están habilitadas las URLS amigables.
+
+Ej: /componente/tipo/?id=1&view=pagina
+
+RewriteCond %{THE_REQUEST} /componente/tipo\?item_id=1\&view=pagina [NC]
+RewriteRule ^ /404/? [L,R]
+
+Escapapamos el símbolo de interrogación (?) con la barra inversa (\).
+En este caso del ejemplo lo redireccionamos a una página de error que hayamos creado previamente "/404", porque la URL indexada lleva a una página de error devuelta por el framework.
+
+
+1.8) Para redireccionar varias URLS formadas por parámetros a un único sitio y eliminar query string (QSA)
+Si por ejemplo queremos que estas URLS:
+
+http://midominio.com/directorio/index.php?id=123
+http://midominio.com/directorio/index.php?txt=alerta
+http://midominio.com/directorio/index.php?variable=valor
+
+Apunten a:
+
+http://midominio.com/nueva-pagina (Sin QueryString)
+
+RewriteRule ^directorio/(.*)$ /nueva-pagina? [L,R=301]
+RewriteRule index\.php$ /nueva-pagina? [L,R=301]
+
+Con el ^ indicamos que es justo después del dominio "http://midominio.com/" si no lo ponemos buscará en la URL lo que le indiquemos como "index.php".
+Con el interrogante tras "nueva-pagina?" hacemos que la URL termine ahí y no nos añada el resto de la querystring.
+
+1.9) Redireccionamos cualquier URL que empiece con "/dir1/subdir1/" y tenga un query string con el par [clave=valor*] a la URL "/nuevo/?clave=valor"
+Si queremos que "valor" sea exacto finalizamos con "$" (RewriteCond %{QUERY_STRING} clave=valor$)
+Si no queremos que añada el query string debemos finalizar la regla con "?" (RewriteRule (.*) /nuevo/? [R=301,L])
+
+RewriteCond %{REQUEST_URI} ^/dir1/subdir1/
+RewriteCond %{QUERY_STRING} clave=valor
+RewriteRule (.*) /nuevo/ [R=301,L]
+
+1.10) En este otro ejemplo nos genera multiples redirecciones variables del tipo numérico (1,2,99...) a "index-1.html, index-2.html, index-99.html..."
+
+RewriteCond %{QUERY_STRING} clave=valor-([0-9]+) [NC]
+RewriteRule (.*) /directorio/index-%1.html? [R=301,L]
+
+1.11) En este ejemplo elimina de la url un subdirectorio intermedio y si la url fuese "dominio/dir1/dir2/dir3/dir4/dir5" quedaría en "dominio/dir1/dir3/dir4/dir5"
+
+RewriteCond %{REQUEST_URI} ^/dir1/dir2/dir3/
+RewriteRule dir1/dir2/dir3/(.+) /dir1/dir3/$1 [R=301,L]
+
+Ojo!!! no poner la primera barra en la ruta a modificar en la línea del RewriteRule (RewriteRule dir1/dir2/dir3/) Tambien pude ponerse solo parte de la ruta para poder obtener el resto de parámetros variables, por ejemplo: (RewriteRule r2/dir3/(.+) /dir1/dir3/$1 [R=301,L])
+
+1.12) En este ejemplo elimina de la url la extensión ".html" conservando los parámetros posteriores a ".html". Si la url fuese "www.dominio.com/pagina.html?param0=valor&param1=valor" quedaría en "www.dominio.com/pagina?param0=valor&param1=valor"
+
+RewriteCond %{THE_REQUEST} \.html
+RewriteRule ^(.*)\.html(.*)$ /$1$2 [R=301,L]
+
+1.13) Redirigir todos los enlaces que contengan algo concreto después de una fecha. En este caso todas las URL que contengan "formulario/registro" que sean consultadas después del 31/12/2017 a las 18:30 serán redireccionadas a "/registro-cerrado". Url de ejemplo: http://www.midominio.com/es/formulario/registro-curso/primer-ciclo" será redirigida a http://www.midominio.com/registro-cerrado
+
+RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR}%{TIME_MIN} > 201812311830
+RewriteCond %{REQUEST_URI} formulario/registro
+RewriteRule (.*) /registro-cerrado [R=301,L]
+
+1.14) Redirigir los enlaces cuando contengan algo concreto en días concretos de la semana, por ejemplo el fin de semana. En este caso todas las URL que contengan "formulario/registro" que sean consultadas sábado o domingo serán redireccionadas a "/registro-cerrado". Url de ejemplo: http://www.midominio.com/es/formulario/registro-curso/primer-ciclo" será redirigida a http://www.midominio.com/registro-cerrado
+
+RewriteCond %{TIME_WDAY} =0 [OR]
+RewriteCond %{TIME_WDAY} =6
+RewriteCond %{REQUEST_URI} formulario/registro
+RewriteRule (.*) /registro-cerrado [R=301,L]
+
+1.15) Para redirigir una extensión a otra y mantener los parámetros. Por ejemplo redirigir todas las páginas ".asp" a la homónima ".php"
+
+RewriteCond %{THE_REQUEST} ^[A-Z]+\s.+\.asp
+RewriteRule ^/?(.*).asp $1.php [L,R=301]
+
+1.16) Ejemplo de migración de URLS de una tienda en Prestashop a Wordpress.
+
+https://mitienda.com/p/producto/10.html
+a
+https://mitneda.com/p/producto
+
+RewriteCond %{THE_REQUEST} \/(.*).html
+RewriteRule ^(.*)\/(.*).html(.*)$ /$1 [R=301,L]
+
+2. Bloqueo de IPs
+
+Pero el redireccionamiento no lo es todo. Ahora imagina, ¿Qué sucedería si hay un crawlers o un boot spam que sobre carga tu servidor con peticiones inútiles o consultas fastidiosas? ¿Cómo los bloqueamos?
+
+Order allow, deny
+Deny from 123.123.123.123
+Allow from all
+
+Donde 123.123.123.123 es la dirección ip a bloquear. Si se percatan, las directivas son muy similares a la anterior, con la diferencia, que en la primera denegamos el acceso a todos los visitantes, mientras que en la actual a uno.
+
+3. Transfiriendo Page Rank
+
+Esto se aplica a los casos en que hemos movido o renombrado una página web en nuestro sitio y queremos que todos nuestros visitantes sean enviados a la nueva url. La alternativa, que incluye la transferencia de PageRank, para el posicionamiento en buscadores, es:
+
+Redirect 301 /pagina_antigua.html http://tusitio.com/ pagina_nueva.html
+
+Con el redireccionamiento 301, la página nueva no pierde el valor ganado por la página antigua.
+
+4. Prevenir la navegación en un directorio
+
+Esto es algo que a veces se nos olvida. Cuando un directorio no tiene la página de index, cualquier visitante puede observar los archivos contenidos en el directorio, y navegar a través de ellos. Si nosotros queremos prevenir esto, sólo debemos escribir lo siguiente:
+
+Options All -Indexes
+
+Para evitar la navegacion según el nombre del fichero. El siguiente ejemplo no permitirá visualizar el contenido de los siguientes ficheros:
+
+    CHANGELOG.md
+    README.md
+    *.lock
+    *.cache
+    *.db
+    .config
+    *.config
+    *.config*
+    .example
+    *.example
+    *.example*
+
+# Restricted access to files
+<FilesMatch "((\.(lock|cache|db))|CHANGELOG.md|README.md|^(.*\.config|.*\.example)(.*?))$">
+	# Apache < 2.3
+	<IfModule !mod_authz_core.c>
+		Order allow,deny
+		Deny from all
+		Satisfy All
+	</IfModule>
+
+	# Apache ≥ 2.3
+	<IfModule mod_authz_core.c>
+		Require all denied
+	</IfModule>
+</FilesMatch>
+
+5. Página de Error 404 personalizada
+
+Por defecto, el servidor Apache muestra una página de error 404 “404 File Not Found”, cuando nuestros visitantes acceden a una página que en el momento no existe.
+
+Sin embargo, la página por defecto es poco usable y no deja una buena impresión. Por lo que, podríamos crear una página especial, a la cual redirigir cada vez que se produce el error 404.
+
+ErrorDocument 404 /404.html
+
+Donde 404.html es el nombre de la página personalizada, que queremos que nuestros visitantes vean.
+
+6. Reescribir URLs amigables
+
+Cuando tenemos dos urls amigables, por lo general se recomienda escoger la más corta y fácil de recordar. Por ejemplo:
+
+RewriteEngine on
+RewriteRule ^contacto/$ /pages/contacto.html [L]
+
+Aquí le decimos al servidor Apache, que active el modulo mod_rewrite (RewriteEngine on) y muestre el contenido de “/pages/contacto.html” cada vez que cualquier visitante ingrese a “http://tusitio.com/contacto”. Con la bandera L, detenemos el proceso si es que se cumple la condición, de esta manera ahorramos recursos.
+
+Para crear URLs amigables con PHP podemos usar una función que nos genere la URL:
+
+<?php
+/**
+ * Función para generar Url Amigable
+ */
+ function url_parser($url) {
+    
+  // Pasamos a minúsculas
+  $url = strtolower($url);
+
+  // Reemplazamos caracteres latinos (tildes y eñes)
+  $find = array('á', 'é', 'í', 'ó', 'ú', 'ñ');
+  $replace = array('a', 'e', 'i', 'o', 'u', 'n');
+  $url = str_replace ($find, $replace, $url);
+  
+  // Añadimos guiones
+  $find = array(' ', '&', '\r\n', '\n', '+'); 
+  $url = str_replace ($find, '-', $url);
+  
+  // Reemplazamos resto de caracteres distintos de letras y números
+  $find = array('/[^a-z0-9\-<>]/', '/[\-]+/', '/<[^>]*>/');
+  $replace = array('', '-', '');
+  $url = preg_replace ($find, $replace, $url);
+  
+  return $url;
+ }
+?>
+
+Puedes ver más información aquí: Urls Amigables con PHP
+
+7. Directorios restringidos con contraseñas
+
+En los casos en que necesitemos permitir el acceso a un directorio sólo a determinadas personas, podemos configurar nuestro servidor apache para cubrir esta necesidad. Básicamente, son 2 pasos los que hay que seguir:
+
+Paso 1.- Crear el .htaccess, en el directorio a restringir
+
+AuthUserFile /full/path/to/.htpasswd
+AuthName "Ingresar"
+AuthType Basic
+
+require user nombre_de_usuario
+
+El archivo .htpasswd no debe estar en un directorio accesible a cualquier cliente web. No se olviden de probar esto.
+
+Paso 2.- Crear el fichero .htpasswd
+El ficher .htpasswd debe contener el nombre de usuario y la contraseña, que Apache solicitará. La contraseña debe estar cifrada.
+
+nombre_de_usuario:password_encriptado
+
+8. Orden de ejecución de archivos
+
+Si tiene tanto el archivo index.html como el archivo index.php en la carpeta /public_html, el archivo index.html tiene mayor prioridad y se ejecutara en primer lugar. Aunque la mayoría de scripts web utilizan el archivo index.php como punto de partida. Si se puede eliminar el archivo index.html, se soluciona el problema, aunque no siempre es asi y en estos casos hay una mejor solución que es utilizar el siguiente código para dar prioridad al archivo index.php en vez de index.html.
+
+DirectoryIndex index.php index.html
+
+9. Comprimir archivos CSS, JavaScript, XML y texto
+
+El siguiente código está diseñado para comprimir el código de salida CSS, JavaScript, XML y de texto antes de ser mostrado en el navegador. La idea básica es ahorrar tiempo en la carga y no consumir tanto ancho de banda.
+
+AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript
+
+10. Almacenamiento en caché de imágenes
+
+Cada vez que recibimos visitas en la web, el servidor web obtiene todos los archivos necesarios, tales como archivos CSS y JavaScript, así como fotos e imágenes para poder mostrarla. Podemos usar el código de abajo para gestionar los archivos de caché, y que cuando un visitante vuelva a visitarnos por segunda vez, el servidor cargue el archivo de la caché lo que acelerará el tiempo de carga sitio web.
+
+ExpiresActive On
+ExpiresByType image/gif A432000
+ExpiresByType image/jpg A432000
+ExpiresByType image/jpeg A432000
+ExpiresByType image/png A432000
+ExpiresByType image/ico A432000
+ExpiresByType image/bmp A432000
+ExpiresByType text/css A432000
+ExpiresByType text/javascript A432000
+ExpiresByType application/javascript A432000
+ExpiresByType application/x-javascript A432000
+
+El código anterior guarda caché de los archivos durante cinco días o 432.000 segundos. Puede cambiar el período de almacenamiento en caché, asegurándose de utilizar el valor expresado en segundos.
+
+11. Proteger el archivo .htaccess
+
+El siguiente código evita que su archivo .htaccess puedan ser leído directamente desde el navegador web.
+
+order allow,deny
+deny from all
+
+12. Prevenir el hotlinking
+
+A veces, otros webmasters, hacen suyas las imágenes de nuestras webs, artículos, etc., afectando con ello el ancho de banda de que disponemos en nuestro Hosting. Si ademas ellos tienen una gran cantidad de visitantes al día, estos van a utilizar nuestro ancho de banda del servidor para visualizar nuestras imagenes en la web ajena a nosotros. Se puede utilizar el código que se muestra a continuación para evitar el hotlinking, y de esta forma reemplazar la imagen original por otra con algún aviso para hacerles saber que la imagen es nuestra o que el hotlinking es una mala práctica.
+
+RewriteEngine On
+RewriteCond %{HTTP_REFERER} !^http://(.+\.)?midominio\.com/ [NC]
+RewriteCond %{HTTP_REFERER} !^$
+RewriteRule .*\.(jpg|gif|bmp|png)$ http://hotlink.midominio.com/no_se_permite_hotlinking.jpg [L]
+
+Puede subir las imágenes a un sitio de alojamiento de imágenes como ImageShack para evitar que su ancho de banda se vea afectado.
+
+13. Cambiar la ubicación de la carpeta de dominio a otra carpeta de /public_html
+
+Si ya tiene un sitio web en el /public_html, y quiere actualizar la página web, pero no quiere que los demás lo vean, pero tampoco quiere afectar al sitio web en producción existente, la forma más fácil es la construcción de la nueva página web en una subcarpeta de /public_html, por ejemplo, /public_html/web2.
+
+Al finalizar todas las pruebas y mejoras, quiere reemplazar el antiguo sitio web con el nuevo pero transferir archivos y carpetas a la carpeta /public_html es bastante molesto. La mejor solución es usar .htaccess para decirle a Apache que utilice la carpeta /public_html/web2 en lugar de /public_html para el dominio.
+
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^midominio\.com$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.midominio\.com$
+RewriteCond %{REQUEST_URI} !^/web2/
+RewriteRule (.*) /web2/$1 [L]
+
+14. Crear URLs de uso fácil o "amigables"
+
+¿Cuál de las dos URL a continuación parece más amigable?
+
+http://tusitio.com/acercade
+http://tusitio.com/paginas/acercade.html
+
+Cuando se trata de direcciones URL, siempre y cuando el significado sea claro, cuanto más corto es, mejor. htaccess con una llamada al módulo de Apache mod_rewrite permite configurar las direcciones URL como quieras. El servidor puede mostrar el contenido de "/paginas/acercade.html" cada vez que alguien visita "http://tusitio.com/acercade".
+
+A continuación algunos ejemplos:
+
+RewriteEngine on
+RewriteRule ^acercade/$ /paginas/acercade.html [L]
+RewriteRule ^caracteristicas/$ /caracteristicas.php [L]
+RewriteRule ^comprar/$ /comprar.html [L]
+RewriteRule ^contacto/$ /paginas/contacto.htm [L]
+
+En este otro ejemplo eliminamos "category" de la URL de las categorías de wordpress
+
+RewriteRule ^category/(.+)$ http://mipagina.com/$1 [R=301,L]
+
+15. Forzar el uso de SSL
+
+Este código fuerza a utilizar SSL, no permitiendo conexiones http. Para evitar escuchas en http:// utilizamos por debajo la directiva ErrorDocument.
+
+SSLOptions + StrictRequire
+SSLRequireSSL
+
+Forzamos la conexión SSL de todo el sitio mediante redirección ModRewrite:
+
+RewriteEngine On 
+RewriteCond %{HTTPS} !=on
+RewriteRule ^.*$ https://%{SERVER_NAME}%{REQUEST_URI} [R,L]
+
+## Otra forma (si la anterior nos da algun error) y si además queremos excluir la redirección a HTTPS en nuestro entorno local de desarrollo:
+ RewriteCond %{HTTP_HOST} !^nuestro.site.local$
+ RewriteCond %{HTTPS} !on
+ RewriteCond %{THE_REQUEST} ^(GET|HEAD)\ ([^\ ]+)
+ RewriteRule (.*) https://%{HTTP_HOST}%2 [L,R=301]
+
+Para forzar la conexión SSL de todo el sitio y con WWW:
+
+## Force SSL and WWW
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP_HOST} !^www\..+$ [NC]
+RewriteRule ^(.*)$ https://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+ # o también
+ # RewriteRule ^(.*)$ https://www.%{HTTP_HOST}/$1 [R=301,L]
+
+
+## Otra forma (si la anterior nos da algun error) y si además queremos excluir la redirección a HTTPS en nuestro entorno local de desarrollo:
+ RewriteCond %{HTTP_HOST} !^www\..+$ [NC]
+ RewriteCond %{HTTP_HOST} !^nuestro.site.local$
+ RewriteCond %{HTTPS} !on
+ RewriteCond %{THE_REQUEST} ^(GET|HEAD)\ ([^\ ]+)
+ RewriteRule (.*) https://%{HTTP_HOST}%2 [L,R=301]
+
+Para aplicarlo solo a un directorio añadiremos la condición de dicho directorio:
+
+RewriteEngine On 
+RewriteCond %{HTTPS} !=on
+RewriteCond %{REQUEST_URI} directorio 1 [OR]
+RewriteCond %{REQUEST_URI} directorio 2
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+16. Cuando una línea comienza por # es un comentario que no tiene ningún efecto.
+
+Cuando alguien visita su sitio el servidor web Apache verifica si tiene un archivo .htaccess en algún lugar de su espacio web a partir de la carpeta raíz o la carpeta principal y rastrea todas las carpetas hasta llegar al archivo solicitado. Si encuentra un archivo .htaccess, sus directivas se aplican a la solicitud actual.
+
+Es importante saber que el archivo .htaccess debe ser legible por el servidor Apache. Por tanto es importante consultar con su Hosting si se requiere algún permiso especial que hayan establecido para los archivos .htaccess. En general los permisos correctos para este archivo son 644.
+
+PARÁMETROS
+
+.htaccess (Acceso de Hiper-Texto) es un archivo de texto que Apache usa para crear reglas sobre los directorios y los archivos. Tiene múltiples funciones y en lo personal me parece una herramienta sumamente interesante.
+
+A manera de glosario anexo simbologías utilizadas en el archivo .htaccess con la intención de que podamos comprender mejor el código y a la vez personalizarlo según necesidades específicas.
+
+# Se ignora la línea.
+
+[F] Forbidden: para forzar un acceso denegado. 403 Forbidden.
+
+[L] Last rule: para indicar que es la última regla que debe aplicarse
+
+[N] Next: indica continuación hasta que las directivas sean logradas
+
+[G] Gone: indica al servidor entregar "Gone" (ya no existe)
+
+[P] Proxy: instruye al servidor para manejar los pedidos por mod_proxy
+
+[C] Chain: Instruye al servidor para encadenar la regla actual con la regla previa.
+
+[R] Redirect: indica redirección.
+
+[NC] No Case: para indicar que en la directiva no debe distinguirse entre mayúsculas y minúsculas.
+
+[PT] Pass Through: pasa el URL al Apache para seguir procesando.
+
+[OR] Or: para indicar que la expresión actual debe interpretase como una alternativa a la anterior.
+
+[NE] No Escape: instruye al servidor para analizar las salidas sin escapar carácteres.
+
+[NS] No Subrequest: para saltar directivas de sub-pedidos internos.
+
+[QSA] Append Query String: para agregar un query string al final de la expresión (URL).
+
+[S=x] Skip: para saltar las siguientes "x" reglas.
+
+[E=variable:value] Environmental Variable: para agregar una variable a un valor.
+
+[T=MIME-type] Mime Type: declara mime-type al recurso.
+
+[] dentro de los paréntesis se encierran carácteres que definen los resultados.
+
+[]+ se utiliza para hacer combinaciones.
+
+[^] excluye los carácteres dentro del paréntesis, de los resultados. Ejemplo [^xyz].
+
+[a-z] solamente letras.
+
+[a-z]{1,10} palabras entre 1 y 10 caracteres.
+
+[0-9] solamente números.
+
+[0-9]{4} números de 4 cifras.
+
+(.*) cualquier expresión.
+
+a{n} especifica el número exacto del caracter que le precede.
+
+a{n,} especifica el número "o más" del caracter que le precede.
+
+a{n,m} especifica un rango entre "n" y "m". Ejemplo x{4,7} resulta 4,5,6 o 7 x´s.
+
+() agrupa carácteres
+
+^ denota "el principio" del argumento.
+
+$ denota "el fin" del argumento.
+
+? Declara como opcional el caracter anterior.
+
+! declara negación (excepto). Ejemplo: "!string" resulta "excepto string".
+
+. el punto indica "cualquier caracter arbitrario".
+
+- instrucción “not to”.
+
++declara "uno o más" del caracter que le precede.
+
+| declara "or". Ejemplo (x|y) resulta "x" o "y".
+
+\ para leer caracteres especiales. Ejemplo “\.” indica literalmente un punto.
+
+/* indica cero o más "/".
+
+.* indica cero o más caracteres arbitrarios.
+
+^$ indica un "empty string".
+
+^.*$ pauta estándar para obtener todo.
+
+[^/.] define, un caracter que no es "/" ni ".".
+
+[^/.]+ define, ningún número de caracter que tenga "/" o ".".
+
+http:// es literalmente “http://”.
+
+^domain.* define un string que comienza con el término "domain" y continúa con cualquier número de caracteres.
+
+^domain\.com$ define exactamente “domain.com”.
+
+-d prueba si el string es un directorio existente.
+
+-f prueba si el string es un archivo existente.
+
+-s prueba si el archivo en el string no tiene valor cero.
+
+VARIABLES DE SERVIDOR (Server Variables)
+HTTP headers:
+HTTP_ACCEPT
+HTTP_COOKIE
+HTTP_FORWARDED
+HTTP_HOST
+HTTP_PROXY_CONNECTION
+HTTP_REFERER
+HTTP_USER_AGENT
+server internals:
+DOCUMENT_ROOT
+SCRIPT_GROUP
+SCRIPT_USER
+SERVER_ADDR
+SERVER_ADMIN
+SERVER_NAME
+SERVER_PORT
+SERVER_PROTOCOL
+SERVER_SOFTWARE
+connection & request:
+AUTH_TYPE
+CONN_REMOTE_ADDR
+CONTEXT_PREFIX
+CONTEXT_DOCUMENT_ROOT
+IPV6
+PATH_INFO
+QUERY_STRING
+REMOTE_ADDR
+REMOTE_HOST
+REMOTE_IDENT
+REMOTE_PORT
+REMOTE_USER
+REQUEST_METHOD
+SCRIPT_FILENAME
+date and time:
+TIME_YEAR
+(The current year (e.g. 2010))
+TIME_MON
+(The current month (01, ..., 12))
+TIME_DAY
+(The current day of the month (01, ...))
+TIME_HOUR
+(The hour part of the current time (00, ..., 23))
+TIME_MIN
+(The minute part of the current time)
+TIME_SEC
+(The second part of the current time)
+TIME_WDAY
+(The day of the week (starting with 0 for Sunday))
+TIME
+(The date and time in the format 20101231235959)
+specials:
+API_VERSION
+CONN_REMOTE_ADDR
+HTTPS
+IS_SUBREQ
+REMOTE_ADDR
+REQUEST_FILENAME
+REQUEST_SCHEME
+REQUEST_URI
+THE_REQUEST
+
+Estas variables corresponden a los encabezados MIME HTTP, las variables C de Apache o los campos struct tm Unix. La descripción de cada una de ellas se puede consultar en https://httpd.apache.org/docs/2.4/expr.html#vars
+
+Las siguientes variables son exclusivas de mod_rewrite:
+
+API_VERSION: 
+Esta es la versión de la API del módulo httpd de Apache (la interfaz interna entre el servidor y el módulo) en la compilación httpd actual, como se define en include / ap_mmn.h. La versión del módulo API corresponde a la versión de Apache httpd en uso (en la versión de lanzamiento de Apache httpd 1.3.14, por ejemplo, es 19990320: 10), pero es de interés principalmente para los autores de módulos.
+CONN_REMOTE_ADDR: 
+Desde 2.4.8: la dirección IP de la conexión (consulte el módulo mod_remoteip).
+HTTPS: 
+Contendrá el texto "on" si la conexión está utilizando SSL / TLS, o "off" en caso contrario. (Esta variable se puede usar de forma segura independientemente de si se carga mod_ssl).
+IS_SUBREQ:
+Contendrá el texto "verdadero" si la solicitud que se está procesando actualmente es una solicitud secundaria, "falso" de lo contrario. Las solicitudes secundarias pueden ser generadas por módulos que necesitan resolver archivos adicionales o URI para completar sus tareas.
+REMOTE_ADDR: 
+La dirección IP del host remoto (consulte el módulo mod_remoteip).
+REQUEST_FILENAME: 
+La ruta completa del sistema de archivos local al archivo o script que coincide con la solicitud, si esto ya ha sido determinado por el servidor en el momento en que se hace referencia a REQUEST_FILENAME. De lo contrario, como cuando se usa en un contexto de host virtual, el mismo valor que REQUEST_URI. Dependiendo del valor de AcceptPathInfo, es posible que el servidor solo haya usado algunos de los componentes principales de REQUEST_URI para asignar la solicitud a un archivo.
+REQUEST_SCHEME: 
+Contendrá el esquema de la solicitud (generalmente "http" o "https"). Este valor puede ser influenciado con ServerName.
+REQUEST_URI: 
+El componente de ruta del URI solicitado, como "/index.html". Esto excluye notablemente la cadena de consulta que está disponible como su propia variable llamada QUERY_STRING.
+THE_REQUEST: 
+La línea de solicitud HTTP completa enviada por el navegador al servidor (por ejemplo, "GET /index.html HTTP / 1.1"). Esto no incluye ningún encabezado adicional enviado por el navegador. Este valor no se ha salvado (decodificado), a diferencia de la mayoría de las otras variables a continuación.
+
+(Fuente: https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)
+
+DIRECTIVAS
+
+De forma general se puede decir que las directivas en el .htaccess se componen de tres partes: el tipo de directiva (Options, RewriteCond), los parámetros de la directiva y por último el final de cada línea en que se pueden agregar modificaciones adicionales.
+Las expresiones regulares son patrones de cadenas de textos que se definen utilizando símbolos como el de oclusión (^) para indicar el inicio, el del dólar ($) para señalar el final, el cierre de interrogación (?) para un carácter opcional, el asterisco (*) para varios caracteres opcionales.
+Los valores que aparecen entre corchetes al final de cada línea son modificadores o acciones. Por ejemplo, para RewriteCond se puede utilizar [NC] para indicar que en la directiva no debe distinguirse entre mayúsculas y minúsculas (no case), u [OR] para indicar que la expresión actual debe interpretase como una alternativa a la anterior: Por su parte, RewriteRule admite otros modificadores propios, como [F] para forzar un acceso denegado (forbidden), o [L] para indicar que es la última regla que debe aplicarse (last rule). Ejemplo:
+
+Cambiando la página por defecto:
+Se puede utilizar esta instrucción para cambiar la página por defecto (el orden es importante)
+
+DirectoryIndex inicio.html index.htm index.html index.php
+
+Redireccionar el tráfico web:
+
+Redirect /antiguo.php http://sitio.com/nuevo.php
+
+Limitar los tipos de ficheros que pueden subirse a un directorio
+
+php_value engine off
+AddType text/plain .htm .html .shtml
+
+Contenido dependiente del Navegador
+Para redirigir el contenido en función del navegador se puede utilizar el valor de "User-Agent" que aparece en la cabecera HTTP de las peticiones, y con el que normalmente se identifica el navegador. Por ejemplo, las siguientes líneas colocadas en un fichero .htaccess harían que cuando un agente solicitará la página index.html se le sirviese la página index.opera.html si se identifica como "Opera/*", la página index.mozilla.html si se identifica como "Mozilla/*" y la página index.html en cualquier otro caso.:
+
+RewriteCond %{HTTP_USER_AGENT} ^Opera/*
+RewriteRule ^index\.html$ index.opera.html [L]
+RewriteCond %{HTTP_USER_AGENT} ^Mozilla/*
+RewriteRule ^index\.html$ index.mozilla.html [L]
+RewriteRule ^index\.html$ index.html [L]
+
+Los asteriscos en las expresiones regulares de las directivas casan con cualquier cadena de texto. Y en este caso en concreto se utilizan para redirigir el contenido dependiendo del nombre del agente sin tener en cuenta la versión, que suele indicarse a continuación de la barra, como "Mozilla/3.0", "Mozilla/4.0", "Mozilla/5.0", …
+
+Especificar el e-mail por defecto del administrador del server:
+
+# e-mail del administrador del server
+ SetEnv SERVER_ADMIN nombre[@]sitio.com
+
+Especificar el lenguaje por defecto del server:
+
+# lenguaje por defecto del server
+ DefaultLanguage en-US
+
+Declarar específicos MIME types:
+
+# agregar mime types
+ AddType application/x-shockwave-flash .swf
+ AddType video/x-flv .flv
+ AddType image/x-icon .ico
+
+Prevenir accesos al archivo .htaccess:
+
+# asegurar htaccess
+ <Files .htaccess>
+ order allow,deny
+ deny from all
+ </Files>
+
+Prevenir acceso a un archivo específico:
+
+<files nombre.jpg>
+ order allow,deny
+ deny from all
+</files>
+
+Prevenir acceso a múltiples archivos (puedes variar las extensiones):
+
+<FilesMatch "\.(htaccess|htpasswd|ini|phps|fla|psd|log|sh)$">
+ Order Allow,Deny
+ Deny from all
+</FilesMatch>
+
+Evitar acceso por el navegador a una carpeta sin "index":
+
+Options All -Indexes
+
+Permitir acceso por el navegador:
+
+Options All +Indexes
+
+Evitar el listado de directorios:
+
+IndexIgnore *
+
+Evitar que se muestren tipos de archivo:
+
+IndexIgnore *.wmv *.mp4 *.avi *.etc
+
+Disfrazar la extensión de los archivos:
+
+# los archivos foo se reconocerán como php
+
+ AddType application/x-httpd-php .foo
+
+Proteger directorio de un IP y/o dominio:
+
+<Limit GET POST PUT>
+ order allow,deny
+ allow from all
+ deny from 12.345.67.890
+ deny from .*domain\.com.*
+</Limit>
+
+Denegar todo acceso a un directorio excepto el IP especificado:
+
+<Limit GET POST PUT>
+ order deny,allow
+ deny from all
+ allow from 12.345.67.890
+ allow from .*domain\.com.*
+</Limit>
+
+Bloquear visitantes que provienen del dominio especificado:
+
+<IfModule mod_rewrite.c>
+ RewriteEngine on
+ RewriteCond %{HTTP_REFERER} scumbag\.com [NC,OR]
+ RewriteCond %{HTTP_REFERER} wormhole\.com [NC,OR]
+ RewriteRule .* - [F]
+</ifModule>
+
+Denegar acceso de rango de IP (CIDR):
+
+Deny from 10.1.0.0/16
+Deny from 80.0.0/8
+
+Permitir acceso de rango de IP (CIDR):
+
+Allow from 10.1.0.0/16
+Allow from 80.0.0/8
+
+Denegar rango de IP:Recuerda que se lee de izquierda, "Cualquier IP que comience con":
+
+Deny from 99.88.77.66
+Deny from 99.88.77
+Deny from 99.88
+Deny from 99
+
+Permitir rango de IP
+
+Allow from 99.88.77.66
+Allow from 99.88.77
+Allow from 99.88
+Allow from 99
+
+Evitar Hotlink:
+
+<IfModule mod_rewrite.c>
+ RewriteEngine on
+ RewriteCond %{HTTP_REFERER} !^$
+ RewriteCond %{HTTP_REFERER} !^http://(www\.)?domain\.com/.*$ [NC]
+ RewriteRule .*\.(gif|jpg)$ http://www.domain.com/eatme.jpe [R,NC,L]
+</ifModule>
+
+Puedes agregar otros sitios debajo de la lìnea en que aparece el dominio:
+
+RewriteCond %{HTTP_REFERER} !^http://(www\.)?sitio\.com/.*$ [NC]
+
+Bloquear robots maliciosos:
+
+RewriteEngine On
+RewriteCond %{HTTP_USER_AGENT} ^BlackWidow [OR]
+RewriteCond %{HTTP_USER_AGENT} ^Bot\ mailto:craftbot@yahoo.com [OR]
+RewriteCond %{HTTP_USER_AGENT} ^Zeus
+RewriteRule .* - [F]
+
+Se puede personalizar el error generado a estos robots modificando la última línea (RewriteRule) de esta forma:
+
+RewriteRule ^.*$ http://www.pagina_de_error.com [R,L]
+
+Te recomiendo que uses la siguiente línea en tu .htaccess. Referente al bloqueo de Robots y Referers maliciosos:
+
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?gameday.de.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?play-texas-holdem.gameday.de.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?forever.kz.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?craps.forever.kz.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?roulette-online.forever.kz.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?play-poker.forever.kz.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?onlinecasino.forever.kz.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?texashold-em.freeservers.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?playonline.inn7winter.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?poker-new.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?available-poker.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?free-poker.available-poker.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?texasholdem.prv.pl.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?prv.pl.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?homestead.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?texaspoker.homestead.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?t-e-x-a-s-poker.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?texas-poker.olo.cc.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?holdem-poker.servertown.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?online-poker.played.by.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?empire-poker.black-poker.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?black-poker.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?free.fr.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?pc800cdf.free.fr.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?free-poker.standard-poker.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?cameralover.net.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?golfshoot.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?bitlocker.net.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?bayfronthomes.net.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?cafexml.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?turniptruck.com.*$ [NC]
+RewriteCond %{HTTP_REFERER} ^http(s)?://(www\.)?trojan-horse.co.uk.*$ [NC]
+RewriteRule .* - [F,L]
+RewriteCond %{REMOTE_HOST} adm-muenchen\.de [NC,OR]
+RewriteCond %{REMOTE_HOST} cyveillance\.com [NC,OR]
+RewriteCond %{REMOTE_HOST} lightspeedsystems\.com [NC,OR]
+RewriteCond %{REMOTE_HOST} pea016-29980-net-adsl-01\.altohiway\.com [NC,OR]
+RewriteCond %{REMOTE_HOST} smartservercontrol\.com [NC,OR]
+RewriteCond %{REMOTE_HOST} syntryx\.com [NC,OR]
+RewriteCond %{REMOTE_HOST} proxad\.net [NC]
+RewriteRule ^.*$ - [F]
+RewriteCond %{HTTP_USER_AGENT} ^$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^BlackWidow [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Bot\ mailto:craftbot@yahoo.com [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^ChinaClaw [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Custo [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^DISCo [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Download\ Demon [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^eCatch [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^EirGrabber [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^EmailSiphon [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^EmailWolf [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Express\ WebPictures [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^ExtractorPro [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^EyeNetIE [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^FlashGet [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^GetRight [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^GetWeb! [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Go!Zilla [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Go-Ahead-Got-It [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^GrabNet [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Grafula [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^HMView [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} HTTrack [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Image\ Stripper [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Image\ Sucker [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} Indy\ Library [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^InterGET [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Internet\ Ninja [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} Java [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^JetCar [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^JOC\ Web\ Spider [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^larbin [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^LeechFTP [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^lwp:: [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^lwp- [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Mass\ Downloader [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^MIDown\ tool [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Mister\ PiX [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Navroad [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^NearSite [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^NetAnts [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^NetSpider [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Net\ Vampire [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^NetZIP [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Octopus [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Offline\ Explorer [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Offline\ Navigator [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^PageGrabber [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Papa\ Foto [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^pavuk [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^pcBrowser [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^RealDownload [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^ReGet [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^SiteSnagger [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^SmartDownload [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Schmozilla [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^SuperBot [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^SuperHTTP [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Surfbot [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^tAkeOut [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Teleport\ Pro [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^VoidEYE [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Web\ Image\ Collector [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Web\ Sucker [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebAuto [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebCopier [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^webcollage [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebFetch [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebGo\ IS [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebLeacher [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebReaper [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebSauger [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Website\ eXtractor [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Website\ Quester [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebStripper [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebWhacker [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WebZIP [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Wget [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Widow [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^WWWOFFLE [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Xaldon\ WebSpider [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^Zeuse [NC]
+RewriteRule ^.*$ - [F]
+
+Bloquear "referrers" específicos. En este ejemplo se bloquea a1b2.com:
+
+RewriteCond %{HTTP_REFERER} ^http://www.a1b2.com$
+RewriteRule !^http://[^/.]\.tusitio\.com.* - [F,L]
+
+Redirecciona lo que venga de "a1b2" a una imagen:
+
+RewriteCond %{HTTP_REFERER} ^http://.*a1b2.*$ [NC]
+RewriteRule .* http://www.tusitio/imagen.jpg [R]
+
+Redirecciona el tráfico que viene de cierta dirección o rango de dirección a otra página:
+
+RewriteCond %{REMOTE_ADDR} 192.168.10.*
+RewriteRule .* http://www.tusitio.com/otrapagina.html [R]
+
+Asignar permisos CHMOD automáticamente a tipos de archivos:
+
+chmod .htpasswd files 640
+chmod .htaccess files 644
+chmod php files 600
+
+Protección contra ataques DOS, limitando el tamaño de archivos que suben al server.
+(10000000 bytes equivale a 10 megabytes). Esta línea es útil si permites que los usuarios de tu sitio suban archivos.
+
+LimitRequestBody 10000000
+
+Proteger directorios evitando la ejecución de scripts (edita las extensiones según lo requerido):
+
+AddHandler cgi-script .php .pl .py .jsp .asp .htm .shtml .sh .cgi
+Options -ExecCGI
+
+Páginas de error personalizadas:
+
+ErrorDocument 400 /errors/400.html
+ErrorDocument 401 /errors/401.html
+ErrorDocument 403 /errors/403.html
+ErrorDocument 404 /errors/404.html
+ErrorDocument 500 /errors/500.html
+
+Autocorrección de pequeños errores de escritura:
+
+<IfModule mod_speling.c>
+ CheckSpelling On
+</IfModule>
+
+Permitir al usuario descargar o abrir archivos multimedia (por lo general sólo se abren):
+
+AddType application/octet-stream .avi
+AddType application/octet-stream .mpg
+AddType application/octet-stream .wmv
+AddType application/octet-stream .mp3
+
+Redireccionar visitantes a una dirección alternativa, menos a ti (modifica el IP):
+
+ErrorDocument 403 http://www.sitio-alternativo.com
+Order deny,allow
+Deny from all
+Allow from 200.105.77.66
+
+Prevenir el acceso a un directorio a una hora u horas específicas:
+
+# una hora
+ RewriteCond %{TIME_HOUR} ^12$
+ RewriteRule ^.*$ - [
+
+# varias horas
+ RewriteCond %{TIME_HOUR} ^(12|13|14|15)$
+ RewriteRule ^.*$ - [F,L]
+
+Redireccionar permanentemente www.sitio.com a sitio.com:
+
+RewriteEngine on
+Options +FollowSymLinks
+RewriteCond %{HTTP_HOST} ^www\.sitio\.com$ [NC]
+RewriteRule ^(.*)$ http://sitio.com/$1 [R=301,L]
+
+Redireccionar todo el contenido de un directorio a la raiz del propio directorio sin entrar en bucle permanente:
+
+RewriteEngine on
+RewriteCond %{REQUEST_URI} ^/categoria/(.+)$
+RewriteRule ^(.*) /categoria [R=301,NC]
+
+Redireccionar vieja página a la nueva:
+
+RewriteEngine On
+RewriteRule ^(.*)$ http://www.nueva.com/$1 [R=301,L]
+
+Redirecionar el sitio vía 301:
+
+redirect 301 / http://www.domain.com/
+
+Redireccionar archivo específico vía 301:
+
+redirect 301 /archivo.html http://www.domain.com/nuevo-archivo.html
+
+Redireccionar sitio vía "permanent":
+
+Redirect permanent / http://www.domain.com/
+
+Redireccionar página o directorio vía "permanent":
+
+Redirect permanent viejo-archivo.html http://www.domain.com/nuevo-archivo.html
+Redirect permanent /viejo-directorio/ http://www.domain.com/nuevo-directorio/
+
+Redireccionar archivo usando "RedirectMatch":
+
+RedirectMatch 301 ^.*$ http://www.domain.com/index.html
+
+Activar compresiónSe puede habilitar la compresión de datos inherente de PHP para ahorrar ancho de banda
+
+<ifmodule mod_php4.c>
+ php_value zlib.output_compression 16386
+</ifmodule>
+
+No mostrar ‘www’
+
+RewriteEngine on
+Options +FollowSymLinks
+RewriteCond %{HTTP_HOST} ^www\.sitio\.com$ [NC]
+RewriteRule ^(.*)$ http://sitio.com/$1 [R=301,L]
+
+Evitando el error 500 pasando el juego de caracteres se evita el mostrar un error 500
+
+AddDefaultCharset utf-8
+
+ 
+
+Tester de htaccess
+
+Accede al siguiente enlace y prueba las reglas de htaccess (completa la URL a la que estás aplicando las reglas, coloca el contenido de htaccess en el área de texto y presiona el botón "Test/Probar"):
+
+htaccess tester
