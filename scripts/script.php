@@ -1,33 +1,28 @@
 <?php
 function changeTextEpisodes()
 {
-    // $frase = readline("Introduce una frase (en minisculas): ");
-    // $frase = strtoupper($frase);
-    // print_r($frase);
     $anime = 'KNY';
     $scanedFiles = glob(__DIR__ . "/../media/dudas/$anime/episodes/(\[AnimeOnlineNinja]\_Kimetsu_no_Yaiba_BD_Castellano_)*");;
     if (sizeof($scanedFiles) > 0) {
         foreach ($scanedFiles as $file) {
-            error_log("/FLU $file");
-            // $exploes = explode("/",$file);
-            // $name = end($exploes);
-            // $newname = str_replace("", "", $name);
-            // $newname = str_replace(" en Catalan", "", $newname);
-            // $newname = str_replace("(360p_H.264-AAC)", "", $newname);
-            // $newname = str_replace(" Final", "", $newname);
-            // if(preg_match('/^0{1}[0-9]{2}/i',$newname)){
-            //     $newname = preg_replace("/^0{1}/i", "" ,$newname);
-            //}// $f = explode("/",$file);
-            //array_pop($exploes);
-            //$path = implode("/",$exploes);
-            //rename("$path/$name","$path/$newname");
+            $exploes = explode("/",$file);
+            $name = end($exploes);
+            $newname = str_replace("", "", $name);
+            $newname = str_replace(" en Catalan", "", $newname);
+            $newname = str_replace("(360p_H.264-AAC)", "", $newname);
+            $newname = str_replace(" Final", "", $newname);
+            if(preg_match('/^0{1}[0-9]{2}/i',$newname)){
+                $newname = preg_replace("/^0{1}/i", "" ,$newname);
+            }
+            array_pop($exploes);
+            $path = implode("/",$exploes);
+            rename("$path/$name","$path/$newname");
         }
     }
 }
 
 function deleteTables()
 {
-    // include_once dirname(__FILE__) . "/../securize.php";
     require_once __DIR__ . '/../classes/database.php';
     $db = new Database();
     $sql = "SELECT tablename FROM pg_catalog.pg_tables
@@ -65,9 +60,9 @@ function dropTables()
             error_log("DROPED table " . PHP_EOL);
         }
     }
-    // $sql = "SELECT count(*) FROM (SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema') AS tables;";
-    // $tables = $db->obtener_una_columna($sql);
-    // error_log("Number of tables $tables");
+    $sql = "SELECT count(*) FROM (SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema') AS tables;";
+    $tables = $db->obtener_una_columna($sql);
+    error_log("Number of tables $tables");
 }
 
 function getSizeDB()
@@ -114,10 +109,6 @@ function ManageFiles()
             }
         }
     }
-    #convertir mkb a mp4 selecionan pista de audio a convertir
-    # ffmpeg -i 01.mkv -c:v libx264 -c:a ac3 -crf 20 -map 0:v:0 -map 0:a:1 01.mp4
-    # https://ostechnix.com/20-ffmpeg-commands-beginners/
-    #youtube-dl -f mp4 https://www.youtube.com/playlist?list=PL1rvSvnnyoDfq6mlcZPJ3fUqlOwAQnMKx
 }
 
 function downloadAssets()

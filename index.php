@@ -1,10 +1,4 @@
 <?php
-/*
-TODO empezar ha migrar a nodejs
-ya que se hace tedioso el mantenimiento, solamente lo utilizaremos para scripts
-y mas tarde se deberian de migrar estos mismos a python o zx
-*/
-
 require_once __DIR__ . '/classes/api.php';
 $api = new Api();
 $mod = $api->getAm();
