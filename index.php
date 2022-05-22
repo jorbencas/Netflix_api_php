@@ -18,12 +18,6 @@ if (isset($mod)) {
         $api->falseHeaders("api_token");
     }
     $headers = $api->getHeaders();
-    // if ($api->isAjax()) {
-    //     error_log($api->getApiToken());
-    //     error_log("/////////////////////");
-    //     error_log($headers['api_token']);
-    // }
-    //error_log("/////////////////////");
     if (isset($headers['api_token']) && substr_compare($api->getApiToken(), $headers['api_token'], 0) == 0) {
         $controller = "api/$mod/{$mod}.php";
         if (file_exists($controller)) {

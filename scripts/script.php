@@ -1,6 +1,3 @@
-// ALTER TABLE metadata DROP COLUMN default_lang;
-// ALTER TABLE metadata DROP COLUMN default_current_page;
-// https://github.com/safak/youtube/tree/chat-app
 <?php
 function changeTextEpisodes()
 {
@@ -130,16 +127,6 @@ function downloadAssets()
     exec("unzip /var/www/Anime/public/libs/fontawesome.zip -d /var/www/Anime/public/libs/fotawesome");
     exec("mv /var/www/Anime/public/libs/fontawesome/fontawesome* /var/www/Anime/public/libs/fontawesome");
     exec("rm /var/www/Anime/public/libs/fontawesome*.zip");
-    // $path = "files/assets.json";
-    // if (file_exists($path)) {
-    //     $assets = json_decode(file_get_contents($path)); 
-    //     foreach ($assets as $value) {
-    //         if (isset($value->name)) {
-    //             $name = $value->name;
-    //         } else $name = null;
-    //         if (!is_dir("Web/assets/$value->path/")) error_log(shell_exec("bash scripts/download_assets.sh $value->url $value->path $name"));
-    //     }
-    // }
 }
 
 print_r("\n Scripts de mantenimiento: 
@@ -170,4 +157,3 @@ switch ($tipoEjercicios) {
         print_r("No existe ninguna funcion $tipoEjercicios");
         break;
 }
-?>
